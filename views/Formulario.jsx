@@ -33,7 +33,78 @@ export default function Formulario({ response }) {
     }
     console.log(response)
     return (
-       <Text>dfsd</Text>
+        <View style={styles.container}>
+
+        {response}
+  <Text style={styles.label}>Nombre:</Text>
+  <TextInput
+    style={styles.input}
+    value={name}
+    onChangeText={setName}
+    placeholder="Ingrese su nombre"
+  />
+   <Text style={styles.label}>Descripción</Text>
+  <TextInput
+  style={styles.input}
+  value={description}
+  onChangeText={setDescription}
+  placeholder=""
+/>
+<Text style={styles.label}>Categoría</Text>
+<TextInput
+  style={styles.input}
+  value={id_event_category}
+  onChangeText={setId_event_category}
+  placeholder=""
+/>
+<Text style={styles.label}>Ubicacion</Text>
+<TextInput
+  style={styles.input}
+  value={id_event_location}
+  onChangeText={setId_event_location}
+  placeholder=""
+/>
+  <Text style={styles.label}>Fecha de Inicio:</Text>
+  <TextInput
+    style={styles.input}
+    value={startDate}
+    onChangeText={setStartDate}
+    placeholder="YYYY-MM-DD"
+  />
+   <Text style={styles.label}>Duración</Text>
+  <TextInput
+  style={styles.input}
+  value={duration_in_minutes}
+  onChangeText={setId_event_location}
+  placeholder="Duracion"
+/>
+<Text style={styles.label}>Precio</Text>
+  <TextInput
+  style={styles.input}
+  value={price}
+  onChangeText={setPrice}
+  placeholder=""
+/>
+<Text style={styles.label}>Máxima asistencia</Text>
+  <TextInput
+  style={styles.input}
+  value={max_assistance}
+  onChangeText={setMax_assistance}
+  placeholder=""
+/>
+<TextInput
+    style={styles.hiddenInput}
+    value={true}
+    onChangeText={setEnabled_enrollement}
+    editable={false} 
+  />
+  <TextInput
+    style={styles.hiddenInput}
+    value={id_creator_user}
+    onChangeText={setId_creator_user}
+    editable={false} 
+  />
+</View>
        
     )}
 
