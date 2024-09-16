@@ -4,21 +4,23 @@ import axios from 'axios';
 import { useState } from 'react';
 
 export default function Login({ navigation }) {
+  
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://192.168.66.4:3000/api/user/login', {username,password});
+      const response = await axios.post('http://172.18.224.1:3000/api/user/login', {username,password});
       if (response.data.success) {
-        navigation.navigate('Home');
+        console.log(response.data, "data");
+        var response_1 = response
+        navigation.navigate('Home', {response_1});
       }
     } catch (error) {
       Alert.alert('Error de Login', error.response.data.message || 'No se pudo iniciar sesión. Por favor, intente nuevamente.');
     }
     }
- 
 
   return (
     <View style={styles.container}>
