@@ -10,13 +10,11 @@ export default function Home({route}) {
   const [errorMessage, setErrorMessage] = useState('');
   const navigation = useNavigation();
 
-  const { response_1, response_2 } = route.params || {};
-  console.log(response_1, "home response 1");
-  console.log(response_2, "home response 2");
+  const { token, id_user } = route.params || {};
   
   const handleEventsHome = async () => {
     try {
-      const response = await axios.post('http://172.22.16.1:3000/api/event/100/0');
+      const response = await axios.post('http://172.30.176.1:3000/api/event/100/0');
      
     } catch (error) {
       Alert.alert('Error de Login', error.response.data.message || 'No se pudo iniciar sesión. Por favor, intente nuevamente.');
@@ -24,7 +22,7 @@ export default function Home({route}) {
     }
     const selectEventsHome = async () => {  //próximos eventos
       try {
-        const response = await axios.get('http://172.22.16.1:3000/api/event/100/0');
+        const response = await axios.get('http://172.30.176.1:3000/api/event/100/0');
         const now = new Date();
         const filteredEvents = response.data.collection.map((evento) => {
           if ( evento.start_date === '2024-03-29T03:00:00.000Z' ) {
@@ -57,7 +55,7 @@ export default function Home({route}) {
           <Text>No hay eventos</Text>
         )}
         {errorMessage ? <Text>{errorMessage}</Text> : null}
-        <StatusBar style="auto" /><Button title="+" onPress ={()=> navigation.navigate('Formulario', {response_1, response_2})} />
+        <StatusBar style="auto" /><Button title="+" onPress ={()=> navigation.navigate('Formulario', {token, id_user})} />
       </View>
     );
   }

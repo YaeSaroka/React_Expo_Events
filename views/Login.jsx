@@ -11,7 +11,7 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://172.22.16.1:3000/api/user/login', {username,password});
+      const response = await axios.post('http://172.30.176.1:3000/api/user/login', {username,password});
       if (response.data.success) {
         console.log(response.data, "data");
         var response_1 = response.data.result.token;

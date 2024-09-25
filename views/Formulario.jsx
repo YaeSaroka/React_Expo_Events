@@ -15,15 +15,29 @@ export default function Formulario({ route }) {
   const [enabled_enrollement, setEnabled_enrollement] = useState(true);
   const [id_creator_user, setId_creator_user] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible2, setModalVisible2] = useState(false);
+  const [locations_, setlocations] = useState(0)
 
-  const { response_1, response_2 } = route.params || {};
+  const { token, id_user } = route.params || {};
   const config = {
-    headers: { Authorization: `Bearer ${response_1}` }
+    headers: { Authorization: `Bearer ${token}` }
   };
-  const handleCreateEvent = async () => { 
-    
+
+
+ 
+
+  const locations = async () => { 
     try {
-      const response = await axios.post('http://172.22.16.1:3000/api/event',{
+      const locations_ = await axios.get('http://172.30.176.1:3000/api/location', config);
+      console.log(locations_.data[0].id , "locations");
+      setlocations(locations_);
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
+    }
+  }
+  const handleCreateEvent = async () => { 
+    try {
+      const response = await axios.post('http://172.30.176.1:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -33,29 +47,35 @@ export default function Formulario({ route }) {
         price,
         max_assistance,
         enabled_enrollement,
-        id_creator_user: response_2 
+        id_creator_user: id_user 
       }, config);
-      console.log(response);
-      if (response.data.success) {
+  
+      if (response.data == "Created. OK") {
         Alert.alert('Success', 'Event created successfully');
         closeModal(); 
+        setTimeout(() => {
+          openModal2();
+        }, 100); 
       }
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Could not create event. Please try again.');
+      Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
     }
   }
 
   const openModal = () => {
     setModalVisible(true);
   };
-
+  const openModal2 = () => {
+    setModalVisible2(true);
+  }
+  
   const closeModal = () => {
     setModalVisible(false);
+    setModalVisible2(false);
   };
 
   return (
     <View style={styles.container}>
-      <Text>{response_1}</Text>
       <Text style={styles.label}>Nombre:</Text>
       <TextInput
         style={styles.input}
@@ -78,6 +98,12 @@ export default function Formulario({ route }) {
         placeholder=""
       />
       <Text style={styles.label}>Ubicación:</Text>
+
+      <FlatList
+        data={DATA}
+        renderItem={({item}) => <Item title={item.title} />}
+        keyExtractor={item => item.id}
+      />
       <TextInput
         style={styles.input}
         value={id_event_location}
@@ -120,6 +146,7 @@ export default function Formulario({ route }) {
       />
      
       <Button title="Crear Evento" onPress={openModal} />
+      <Button title="Crear Evento" onPress={locations} />
 
       <Modal
         animationType="slide"
@@ -148,6 +175,24 @@ export default function Formulario({ route }) {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible2}
+        onRequestClose={closeModal} 
+      >
+        {console.log("hola")}
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Su evento se ha publicado correctamente</Text>
+            <TouchableOpacity style={styles.button} onPress={() => setModalVisible2(false)}>
+              <Text style={styles.buttonText}>Ok</Text>
+            </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
     </View>
   );
 }
