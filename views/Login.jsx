@@ -11,11 +11,13 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://172.24.208.1:3000/api/user/login', {username,password});
+      const response = await axios.post('http://172.22.16.1:3000/api/user/login', {username,password});
       if (response.data.success) {
         console.log(response.data, "data");
         var response_1 = response.data.result.token;
-        navigation.navigate('Home', {response_1});
+        var response_2 = response.data.result.payload.id;
+        console.log(response_2, "response 2");
+        navigation.navigate('Home', {response_1, response_2});
       }
     } catch (error) {
       Alert.alert('Error de Login', error.response.data.message || 'No se pudo iniciar sesión. Por favor, intente nuevamente.');

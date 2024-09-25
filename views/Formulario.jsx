@@ -6,23 +6,24 @@ import { useState } from 'react';
 export default function Formulario({ route }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [id_event_category, setId_event_category] = useState('');
-  const [id_event_location, setId_event_location] = useState('');
+  const [id_event_category, setId_event_category] = useState(0);
+  const [id_event_location, setId_event_location] = useState(0);
   const [startDate, setStartDate] = useState('');
-  const [duration_in_minutes, setDuration_in_minutes] = useState('');
-  const [price, setPrice] = useState('');
-  const [max_assistance, setMax_assistance] = useState('');
+  const [duration_in_minutes, setDuration_in_minutes] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [max_assistance, setMax_assistance] = useState(0);
   const [enabled_enrollement, setEnabled_enrollement] = useState(true);
-  const [id_creator_user, setId_creator_user] = useState('');
+  const [id_creator_user, setId_creator_user] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const { response_1 } = route.params || {};
-
+  const { response_1, response_2 } = route.params || {};
+  const config = {
+    headers: { Authorization: `Bearer ${response_1}` }
+  };
   const handleCreateEvent = async () => { 
-    console.log("entró");
-    console.log(name);
+    
     try {
-      const response_1 = await axios.post('http://172.24.208.1:3000/api/event', {
+      const response = await axios.post('http://172.22.16.1:3000/api/event',{
         name,
         description,
         id_event_category,
@@ -32,9 +33,10 @@ export default function Formulario({ route }) {
         price,
         max_assistance,
         enabled_enrollement,
-        id_creator_user
-      });
-      if (response_1.data.success) {
+        id_creator_user: response_2 
+      }, config);
+      console.log(response);
+      if (response.data.success) {
         Alert.alert('Success', 'Event created successfully');
         closeModal(); 
       }
@@ -53,7 +55,7 @@ export default function Formulario({ route }) {
 
   return (
     <View style={styles.container}>
-      {response_1}
+      <Text>{response_1}</Text>
       <Text style={styles.label}>Nombre:</Text>
       <TextInput
         style={styles.input}
@@ -116,12 +118,7 @@ export default function Formulario({ route }) {
         onChangeText={setEnabled_enrollement}
         editable={false} 
       />
-      <TextInput
-        style={styles.hiddenInput}
-        value={id_creator_user}
-        onChangeText={setId_creator_user}
-        editable={false} 
-      />
+     
       <Button title="Crear Evento" onPress={openModal} />
 
       <Modal
