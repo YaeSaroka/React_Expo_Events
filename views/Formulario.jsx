@@ -2,6 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import { useState } from 'react';
+import RNPickerSelect from "react-native-picker-select";
+
 
 export default function Formulario({ route }) {
   const [name, setName] = useState('');
@@ -16,28 +18,42 @@ export default function Formulario({ route }) {
   const [id_creator_user, setId_creator_user] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
-  const [locations_, setlocations] = useState(0)
+  const [locations_, setlocations] = useState(0);
+  const [items_ids, setItems] = useState([]);
+  const [elegido, setElegido] = useState(null);
+
+  //npm i react-native-picker-select
+
 
   const { token, id_user } = route.params || {};
   const config = {
     headers: { Authorization: `Bearer ${token}` }
   };
-
-
- 
-
+  /*
+    useEffect(() =>{
+      locations();
+    }, []);
+  
   const locations = async () => { 
     try {
-      const locations_ = await axios.get('http://172.30.176.1:3000/api/location', config);
-      console.log(locations_.data[0].id , "locations");
-      setlocations(locations_);
+      const locations_ = await axios.get('http://172.20.128.1:3000/api/location', config);
+      console.log(locations_.data[0].id , "location ");
+      const locations_ids = locations_.data;
+      console.log("funciona")
+      setlocations(locations_ids);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
     }
   }
+  console.log(locations_[0].id);
+  const labels = []
+  for (let i = 0; i < locations_.length; i++) {
+      labels.push({label: 'Opcion ${locations_[i].name}', value: locations_[i].id});
+  }*/
+
   const handleCreateEvent = async () => { 
     try {
-      const response = await axios.post('http://172.30.176.1:3000/api/event', {
+      const response = await axios.post('http://172.20.128.1:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -99,17 +115,18 @@ export default function Formulario({ route }) {
       />
       <Text style={styles.label}>Ubicación:</Text>
 
-      <FlatList
-        data={DATA}
-        renderItem={({item}) => <Item title={item.title} />}
-        keyExtractor={item => item.id}
-      />
       <TextInput
         style={styles.input}
         value={id_event_location}
         onChangeText={setId_event_location}
         placeholder=""
       />
+
+    {/*<RNPickerSelect
+      
+      onValueChange={(value) => setElegido(value)}
+      items = {labels}
+  />*/}
       <Text style={styles.label}>Fecha de Inicio:</Text>
       <TextInput
         style={styles.input}
@@ -146,7 +163,7 @@ export default function Formulario({ route }) {
       />
      
       <Button title="Crear Evento" onPress={openModal} />
-      <Button title="Crear Evento" onPress={locations} />
+      <Button title= "ver si anda la locations" onPress={locations} />
 
       <Modal
         animationType="slide"
@@ -182,7 +199,6 @@ export default function Formulario({ route }) {
         visible={modalVisible2}
         onRequestClose={closeModal} 
       >
-        {console.log("hola")}
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Su evento se ha publicado correctamente</Text>
