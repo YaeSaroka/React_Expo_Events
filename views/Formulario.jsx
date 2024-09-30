@@ -1,59 +1,72 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useState } from 'react';
 import RNPickerSelect from "react-native-picker-select";
 
 
 export default function Formulario({ route }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [id_event_category, setId_event_category] = useState(0);
-  const [id_event_location, setId_event_location] = useState(0);
+  const [id_event_category, setId_event_category] = useState(0);       
+  const [id_event_location, setId_event_location] = useState(0);       
   const [startDate, setStartDate] = useState('');
   const [duration_in_minutes, setDuration_in_minutes] = useState(0);
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
   const [enabled_enrollement, setEnabled_enrollement] = useState(true);
-  const [id_creator_user, setId_creator_user] = useState(0);
+
+
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
-  const [locations_, setlocations] = useState(0);
-  const [items_ids, setItems] = useState([]);
-  const [elegido, setElegido] = useState(null);
-
-  //npm i react-native-picker-select
-
+  const [locations_, setLocations] = useState([]);
+  const [categorias_, setCategorias] = useState([]);
 
   const { token, id_user } = route.params || {};
   const config = {
     headers: { Authorization: `Bearer ${token}` }
   };
-  /*
-    useEffect(() =>{
-      locations();
-    }, []);
   
+  useEffect(() => {
+    locations();
+    categorias();
+  }, []);
+
   const locations = async () => { 
     try {
-      const locations_ = await axios.get('http://172.20.128.1:3000/api/location', config);
-      console.log(locations_.data[0].id , "location ");
-      const locations_ids = locations_.data;
-      console.log("funciona")
-      setlocations(locations_ids);
+      const response = await axios.get('http://172.22.112.1:3000/api/location', config);
+      setLocations(response.data);
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
     }
-  }
-  console.log(locations_[0].id);
-  const labels = []
-  for (let i = 0; i < locations_.length; i++) {
-      labels.push({label: 'Opcion ${locations_[i].name}', value: locations_[i].id});
-  }*/
+  };
+  const locationItems = Array.isArray(locations_) ? locations_.map((location, index) => ({
+    label: location.name, 
+    value: location.id,
+    key: `${location.id}-${index}`, 
+  })) : [];
+
+  const categorias = async () => { 
+    try {
+      const response = await axios.get('http://172.22.112.1:3000/api/event-category', config);
+      setCategorias(response.data);
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
+    }
+  };
+
+  const categoriasItems = Array.isArray(categorias_) ? categorias_.map((categoria, index) => ({
+    label: categoria.name, 
+    value: categoria.id,
+    key: `${categoria.id}-${index}`, 
+  })) : [];
+
+
 
   const handleCreateEvent = async () => { 
+    console.log("entró - ", enabled_enrollement);
     try {
-      const response = await axios.post('http://172.20.128.1:3000/api/event', {
+      const response = await axios.post('http://172.22.112.1:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -65,15 +78,18 @@ export default function Formulario({ route }) {
         enabled_enrollement,
         id_creator_user: id_user 
       }, config);
+
   
       if (response.data == "Created. OK") {
         Alert.alert('Success', 'Event created successfully');
+        console.log("success, evento cargadooooooo");
         closeModal(); 
         setTimeout(() => {
           openModal2();
         }, 100); 
       }
     } catch (error) {
+      console.log("No funciona");
       Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
     }
   }
@@ -106,27 +122,20 @@ export default function Formulario({ route }) {
         onChangeText={setDescription}
         placeholder=""
       />
-      <Text style={styles.label}>Categoría:</Text>
-      <TextInput
-        style={styles.input}
-        value={id_event_category}
-        onChangeText={setId_event_category}
-        placeholder=""
-      />
-      <Text style={styles.label}>Ubicación:</Text>
-
-      <TextInput
-        style={styles.input}
-        value={id_event_location}
-        onChangeText={setId_event_location}
-        placeholder=""
+      <Text style={styles.label}>Categoria:</Text>
+      <RNPickerSelect
+        onValueChange={value => setId_event_category(value)}
+        items={categoriasItems}
+        placeholder={{ label: 'Seleccione una categoria...', value: null }}
       />
 
-    {/*<RNPickerSelect
       
-      onValueChange={(value) => setElegido(value)}
-      items = {labels}
-  />*/}
+      <Text style={styles.label}>Ubicación:</Text>
+      <RNPickerSelect
+        onValueChange={value => setId_event_location(value)}
+        items={locationItems}
+        placeholder={{ label: 'Seleccione una ubicación...', value: null }}
+      />
       <Text style={styles.label}>Fecha de Inicio:</Text>
       <TextInput
         style={styles.input}
@@ -163,7 +172,6 @@ export default function Formulario({ route }) {
       />
      
       <Button title="Crear Evento" onPress={openModal} />
-      <Button title= "ver si anda la locations" onPress={locations} />
 
       <Modal
         animationType="slide"
@@ -177,6 +185,8 @@ export default function Formulario({ route }) {
             <Text>Datos ingresados:</Text>
             <Text>Nombre: {name}</Text>
             <Text>Descripción: {description}</Text>
+            <Text>Categoría: {id_event_category}</Text>
+            <Text>Ubicación: {id_event_location}</Text>
             <Text>Fecha de Inicio: {startDate}</Text>
             <Text>Duración: {duration_in_minutes}</Text>
             <Text>Precio: {price}</Text>
