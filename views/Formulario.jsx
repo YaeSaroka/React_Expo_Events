@@ -24,7 +24,7 @@ export default function Formulario({ route }) {
 
   const { token, id_user } = route.params || {};
   const config = {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}`}
   };
   
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function Formulario({ route }) {
 
   const locations = async () => { 
     try {
-      const response = await axios.get('http://172.22.112.1:3000/api/location', config);
+      const response = await axios.get('http://172.22.112.1:3000/api/event-location', config);
       setLocations(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
@@ -64,7 +64,7 @@ export default function Formulario({ route }) {
 
 
   const handleCreateEvent = async () => { 
-    console.log("entró - ", enabled_enrollement);
+    console.log("entró - ¿el usuario está autorizado? ", enabled_enrollement);
     try {
       const response = await axios.post('http://172.22.112.1:3000/api/event', {
         name,
@@ -228,19 +228,25 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: 'center',
-    backgroundColor: '#fff'
+    backgroundColor: '#f9f9f9', 
   },
   label: {
     fontSize: 16,
-    marginBottom: 8
+    marginBottom: 8,
+    color: '#333', 
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
+    height: 50,
+    borderColor: '#ddd',
     borderWidth: 1,
     marginBottom: 16,
-    paddingHorizontal: 8,
-    borderRadius: 4
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#fff', 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   hiddenInput: {
     height: 0,
@@ -249,7 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 0,
     borderRadius: 4,
-    opacity: 0 
+    opacity: 0,
   },
   modalBackground: {
     flex: 1,
@@ -260,19 +266,20 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '80%',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
-    elevation: 5, // Sombra para Android
-    shadowColor: '#000', // Sombra para iOS
+    elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     alignItems: 'center',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
+    color: '#007bff', 
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -281,14 +288,16 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 20,
-    padding: 10,
-    backgroundColor: '#007bff',
+    padding: 12,
+    backgroundColor: '#007bff', 
     borderRadius: 5,
     flex: 1,
     marginHorizontal: 5,
+    elevation: 3, 
   },
   buttonText: {
     color: '#fff',
     textAlign: 'center',
+    fontWeight: 'bold',
   },
 });

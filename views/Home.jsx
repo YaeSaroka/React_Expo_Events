@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -11,21 +11,17 @@ export default function Home({route}) {
   const navigation = useNavigation();
 
   const { token, id_user } = route.params || {};
-  
-  const handleEventsHome = async () => {
-    try {
-      const response = await axios.post('http://172.22.112.1:3000/api/event/100/0');
-     
-    } catch (error) {
-      Alert.alert('Error de Login', error.response.data.message || 'No se pudo iniciar sesión. Por favor, intente nuevamente.');
-    }
-    }
+  const getCurrentDate = () => {
+    const now = new Date();
+    return now.toISOString(); 
+  };
+  const hoy = getCurrentDate();
     const selectEventsHome = async () => {  //próximos eventos
       try {
         const response = await axios.get('http://172.22.112.1:3000/api/event/100/0');
         const now = new Date();
         const filteredEvents = response.data.collection.map((evento) => {
-          if ( evento.start_date === '2024-03-29T03:00:00.000Z' ) {
+          if ( evento.start_date >= hoy ) {
             setstart_date(evento.start_date.substring(0,10))
             return evento;
           } else console.log("no");
@@ -45,25 +41,88 @@ export default function Home({route}) {
   
     return (
       <View style={styles.container}>
-        <Text>Home</Text>
-        <Text>Siguientes eventos: </Text>
-        {arrayEvents.length > 0 ? (
-          arrayEvents.map((evento, index) => (
-            <Text key={index}>{evento.name} - {start_date_recortada}</Text> 
-          ))
-        ) : (
-          <Text>No hay eventos</Text>
-        )}
-        {errorMessage ? <Text>{errorMessage}</Text> : null}
-        <StatusBar style="auto" /><Button title="+" onPress ={()=> navigation.navigate('Formulario', {token, id_user})} />
-      </View>
+      <Text style={styles.title}>Home</Text>
+      <Text style={styles.subtitle}>Siguientes eventos:</Text>
+      {arrayEvents.length > 0 ? (
+        arrayEvents.map((evento, index) => (
+          <View key={index} style={styles.card}>
+            <Text style={styles.eventText}>{evento.name}</Text>
+            <Text style={styles.dateText}>{evento.start_date_recortada}</Text>
+          </View>
+        ))
+      ) : (
+        <Text style={styles.noEventsText}>No hay eventos</Text>
+      )}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+      
+      <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
+        <Text style={styles.botonText}>+</Text>
+      </TouchableOpacity>
+      <StatusBar style="auto" />
+    </View>
     );
   }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffd9df',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 19,
+    color: '#333',
+    marginBottom: 40,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontWeight: 'bold',
+    fontSize: 30,
+    color: '#7f6065',
+    marginBottom: 10,
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    marginVertical: 10,
+    width: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventText: {
+    fontSize: 18,
+    fontWeight: 'Medium',
+    color: '#444',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#777',
+  },
+  noEventsText: {
+    fontSize: 16,
+    color: '#888',
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    marginTop: 10,
+  },
+  boton: {
+    padding: 10,
+    backgroundColor: '#7f6065', 
+    borderRadius: 5, 
+    width: 100, 
+    alignItems: 'center', 
+  },
+  botonText: {
+    color: '#fff', 
+    fontSize: 18,
   },
 });
