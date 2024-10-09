@@ -34,7 +34,7 @@ export default function Formulario({ route }) {
 
   const locations = async () => { 
     try {
-      const response = await axios.get('http://172.22.112.1:3000/api/event-location', config);
+      const response = await axios.get('http://172.18.48.1:3000/api/event-location', config);
       setLocations(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
@@ -48,7 +48,7 @@ export default function Formulario({ route }) {
 
   const categorias = async () => { 
     try {
-      const response = await axios.get('http://172.22.112.1:3000/api/event-category', config);
+      const response = await axios.get('http://172.18.48.1:3000/api/event-category', config);
       setCategorias(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
@@ -64,9 +64,9 @@ export default function Formulario({ route }) {
 
 
   const handleCreateEvent = async () => { 
-    console.log("entró - ¿el usuario está autorizado? ", enabled_enrollement);
+    console.log("entró a la función - ¿el usuario está autorizado? ", enabled_enrollement);
     try {
-      const response = await axios.post('http://172.22.112.1:3000/api/event', {
+      const response = await axios.post('http://172.18.48.1:3000/api/event', {
         name,
         description,
         id_event_category,
