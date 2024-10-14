@@ -1,137 +1,130 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal} from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
-export default function Home({route}) {
-  const [start_date_recortada, setstart_date] = useState('');
-  const [arrayEvents, setarrayEvents] = useState('');
+export default function Home({ route }) {
+  const [arrayEvents, setArrayEvents] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
 
-  const [cuposrestantes, setCupos] = useState(0);
-
   const navigation = useNavigation();
-
   const { token, id_user } = route.params || {};
-  const getCurrentDate = () => {
-    const now = new Date();
-    return now.toISOString(); 
+  const config = {
+    headers: { Authorization: `Bearer ${token}`}
   };
-  const hoy = getCurrentDate();
-  const selectEventsHome = async () => {  //próximos eventos
-    try {
-      const response = await axios.get('http://172.18.48.1:3000/api/event/100/0');
-      const now = new Date();
-      const filteredEvents = response.data.collection.map((evento) => {
 
-      if ( evento.start_date >= hoy ) {
-          setstart_date(evento.start_date.substring(0,10))
-        return evento;
-      } else console.log("no");
-         return null;
-      }).filter((evento) => evento !== null);
-      setarrayEvents(filteredEvents);
+  const getCurrentDate = () => new Date().toISOString();
+  const hoy = getCurrentDate();
+
+  const selectEventsHome = async () => {
+    try {
+      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
+      const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
+      setArrayEvents(filteredEvents);
     } catch (error) {
       setErrorMessage('Error al cargar eventos');
       console.error(error);
     }
   };
 
-  const inscribirUser = async (estado) => {
-    var response;
-    if(estado != false){
+  const inscribirUser = async (evento) => {
+    console.log(evento);
+    if (evento.enabled_for_enrollment === null ) {
       try {
-        response= await axios.get(`http://172.18.48.1:3000/api/event/${id_user}/enrollment`);
+        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`, {
+          headers: {
+            id_event: evento.id,
+            description: evento.description,
+          },
+        }, config);
+        if (response.status === 201) {
+          openModal();
+        }
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Error en la inscripción';
+        console.error("Error en inscribirUser:", errorMessage);
       }
-      catch{
-        console.log("error axio inscribirUser");
-      }
-      if(response === 'Created. OK'){
-        openModal();
-      }
+    } else {
+      openModal2();
+    }
+  };
 
-    } else openModal2(); // que diga que no se puede incribir al estar lleno
-  }
+  useEffect(() => {
+    selectEventsHome();
+  }, []);
 
-    useEffect(() => {
-      selectEventsHome();
-    }, []);
+  const openModal = () => setModalVisible(true);
+  const openModal2 = () => setModalVisible2(true);
+  const closeModal = () => {
+    setModalVisible(false);
+    setModalVisible2(false);
+  };
 
-    const openModal = () => {
-      setModalVisible(true);
-    };
-    const openModal2 = () => {
-      setModalVisible2(true);
-    };
-    const closeModal = () => {
-      setModalVisible(false);
-      setModalVisible2(false);
-    };
-  
-    return (<>
+  return (
+    <>
       <View style={styles.container}>
-      <Text style={styles.title}>Home</Text>
-      <Text style={styles.subtitle}>Siguientes eventos:</Text>
-      {arrayEvents.length > 0 ? (
-        arrayEvents.map((evento, index) => (
-          <View key={index} style={styles.card}>
-            <Text style={styles.eventText}>{evento.name}</Text>
-            <Text style={styles.dateText}>{evento.start_date_recortada}</Text>
-            <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento.enabled_for_enrollment)}>
-              <Text style={styles.botonText2}>Inscribirse</Text>
-            </TouchableOpacity>
-          </View>
-        ))
-      ) : (
-        <Text style={styles.noEventsText}>No hay eventos</Text>
-      )}
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-      
-      <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
-        <Text style={styles.botonText}>+</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
-    </View>
-    
+        <Text style={styles.title}>Home</Text>
+        <Text style={styles.subtitle}>Siguientes eventos:</Text>
+        {arrayEvents.length > 0 ? (
+          arrayEvents.map((evento, index) => (
+            <View key={index} style={styles.card}>
+              <Text style={styles.eventText}>{evento.name}</Text>
+              <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
+              <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
+                <Text style={styles.botonText2}>Inscribirse</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.noEventsText}>No hay eventos</Text>
+        )}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
+          <Text style={styles.botonText}>+</Text>
+        </TouchableOpacity>
+        <StatusBar style="auto" />
+      </View>
 
-    <Modal
+      {/* Modal for success */}
+      <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={closeModal} 
+        onRequestClose={closeModal}
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>¡ Inscripto !</Text>
-            <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={styles.button} onPress={closeModal}>
               <Text>Ok</Text>
             </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+          </View>
+        </View>
+      </Modal>
 
-<Modal
+      {/* Modal for full spots */}
+      <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible2}
-        onRequestClose={closeModal} 
+        onRequestClose={closeModal}
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Cupos llenos...</Text>
-            <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={styles.button} onPress={closeModal}>
               <Text>Ok</Text>
             </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-
+          </View>
+        </View>
+      </Modal>
     </>
-    );
-  }
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -156,8 +149,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 10,
-    elevation: 3, 
-    shadowColor: '#000', 
+    elevation: 3,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -168,7 +161,7 @@ const styles = StyleSheet.create({
   },
   eventText: {
     fontSize: 18,
-    fontWeight: 'Medium',
+    fontWeight: 'medium',
     color: '#444',
   },
   dateText: {
@@ -186,24 +179,24 @@ const styles = StyleSheet.create({
   },
   boton: {
     padding: 10,
-    backgroundColor: '#7f6065', 
-    borderRadius: 5, 
-    width: 100, 
-    alignItems: 'center', 
+    backgroundColor: '#7f6065',
+    borderRadius: 5,
+    width: 100,
+    alignItems: 'center',
   },
   botonText: {
-    color: '#fff', 
+    color: '#fff',
     fontSize: 18,
   },
   botonText2: {
-    color: '#fff', 
+    color: '#fff',
     fontSize: 12,
   },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo oscuro
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark background
   },
   modalContainer: {
     width: '80%',
@@ -221,6 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#007bff', 
+    color: '#007bff',
   },
 });

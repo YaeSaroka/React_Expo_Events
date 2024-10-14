@@ -1,9 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, Alert, Modal, TouchableOpacity, Switch } from 'react-native';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import RNPickerSelect from "react-native-picker-select";
-
 
 export default function Formulario({ route }) {
   const [name, setName] = useState('');
@@ -14,9 +13,8 @@ export default function Formulario({ route }) {
   const [duration_in_minutes, setDuration_in_minutes] = useState(0);
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
-  const [enabled_enrollement, setEnabled_enrollement] = useState(true);
-
-
+  const [enabled_enrollement, setenabled_enrollement] = useState(true);
+  
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
   const [locations_, setLocations] = useState([]);
@@ -24,7 +22,7 @@ export default function Formulario({ route }) {
 
   const { token, id_user } = route.params || {};
   const config = {
-    headers: { Authorization: `Bearer ${token}`}
+    headers: { Authorization: `Bearer ${token}` }
   };
   
   useEffect(() => {
@@ -34,12 +32,13 @@ export default function Formulario({ route }) {
 
   const locations = async () => { 
     try {
-      const response = await axios.get('http://172.18.48.1:3000/api/event-location', config);
+      const response = await axios.get('http://10.144.1.38:3000/api/event-location', config);
       setLocations(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
     }
   };
+
   const locationItems = Array.isArray(locations_) ? locations_.map((location, index) => ({
     label: location.name, 
     value: location.id,
@@ -48,10 +47,10 @@ export default function Formulario({ route }) {
 
   const categorias = async () => { 
     try {
-      const response = await axios.get('http://172.18.48.1:3000/api/event-category', config);
+      const response = await axios.get('http://10.144.1.38:3000/api/event-category', config);
       setCategorias(response.data);
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to load categories');
     }
   };
 
@@ -61,12 +60,9 @@ export default function Formulario({ route }) {
     key: `${categoria.id}-${index}`, 
   })) : [];
 
-
-
   const handleCreateEvent = async () => { 
-    console.log("entró a la función - ¿el usuario está autorizado? ", enabled_enrollement);
     try {
-      const response = await axios.post('http://172.18.48.1:3000/api/event', {
+      const response = await axios.post('http://10.144.1.38:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -75,12 +71,11 @@ export default function Formulario({ route }) {
         duration_in_minutes,
         price,
         max_assistance,
-        enabled_enrollement,
+        enabled_enrollement, 
         id_creator_user: id_user 
       }, config);
 
-  
-      if (response.data == "Created. OK") {
+      if (response.data === "Created. OK") {
         Alert.alert('Success', 'Event created successfully');
         console.log("success, evento cargadooooooo");
         closeModal(); 
@@ -92,14 +87,14 @@ export default function Formulario({ route }) {
       console.log("No funciona");
       Alert.alert('Error', error.response?.data?.message || 'No se pudo completar el formulario');
     }
-  }
+  };
 
   const openModal = () => {
     setModalVisible(true);
   };
   const openModal2 = () => {
     setModalVisible2(true);
-  }
+  };
   
   const closeModal = () => {
     setModalVisible(false);
@@ -122,13 +117,12 @@ export default function Formulario({ route }) {
         onChangeText={setDescription}
         placeholder=""
       />
-      <Text style={styles.label}>Categoria:</Text>
+      <Text style={styles.label}>Categoría:</Text>
       <RNPickerSelect
         onValueChange={value => setId_event_category(value)}
         items={categoriasItems}
         placeholder={{ label: 'Seleccione una categoria...', value: null }}
       />
-
       
       <Text style={styles.label}>Ubicación:</Text>
       <RNPickerSelect
@@ -164,13 +158,13 @@ export default function Formulario({ route }) {
         onChangeText={setMax_assistance}
         placeholder=""
       />
-      <TextInput
-        style={styles.hiddenInput} 
-        value={String(enabled_enrollement)} 
-        onChangeText={setEnabled_enrollement}
-        editable={false} 
-      />
      
+      <Text style={styles.label}>Habilitar Inscripción:</Text>
+      <Switch
+        value={enabled_enrollement}
+        onValueChange={setenabled_enrollement}
+      />
+
       <Button title="Crear Evento" onPress={openModal} />
 
       <Modal
@@ -191,6 +185,7 @@ export default function Formulario({ route }) {
             <Text>Duración: {duration_in_minutes}</Text>
             <Text>Precio: {price}</Text>
             <Text>Máxima asistencia: {max_assistance}</Text>
+            <Text>Estado de Inscripción: {enabled_enrollement ? 'Habilitada' : 'Deshabilitada'}</Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={closeModal}>
                 <Text style={styles.buttonText}>Cancelar</Text>
@@ -215,10 +210,9 @@ export default function Formulario({ route }) {
             <TouchableOpacity style={styles.button} onPress={() => setModalVisible2(false)}>
               <Text style={styles.buttonText}>Ok</Text>
             </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -247,15 +241,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-  },
-  hiddenInput: {
-    height: 0,
-    borderColor: '#fff',
-    borderWidth: 0,
-    marginBottom: 16,
-    paddingHorizontal: 0,
-    borderRadius: 4,
-    opacity: 0,
   },
   modalBackground: {
     flex: 1,
