@@ -4,28 +4,33 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
-
-//modificar user para que tenga un true o false de administrador
-//mostrar cosas siempre con un if de admin o no y lsito :)
-
 export default function Home({ route }) {
   const [arrayEvents, setArrayEvents] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
-  
+  const [modalVisible3, setModalVisible3] = useState(false);
+  const [eventorotar, setEventoRotar] = useState([]);
+  //INSERT INTO public.users (id, first_name, last_name, username, "password") VALUES (3, N'Admin', N'Admin', N'administrador@ad.com.ar', N'admin');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [id_event_category, setId_event_category] = useState(0);       
+  const [id_event_location, setId_event_location] = useState(0);       
+  const [startDate, setStartDate] = useState('');
+  const [duration_in_minutes, setDuration_in_minutes] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [max_assistance, setMax_assistance] = useState(0);
+  const [enabled_for_enrollment, setenabled_enrollement] = useState(true);
+
   const navigation = useNavigation();
-  const { token, id_user } = route.params || {};
-  const config = {
-    headers: { Authorization: `Bearer ${token}`}
-  };
+  const { token, id_user, username } = route.params || {};
 
   const getCurrentDate = () => new Date().toISOString();
   const hoy = getCurrentDate();
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://172.17.176.1:3000/api/event/100/0');
+      const response = await axios.get('http://10.152.2.143:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       setArrayEvents(filteredEvents);
     } catch (error) {
@@ -38,9 +43,7 @@ export default function Home({ route }) {
     console.log(evento);
     if (evento.enabled_for_enrollment) {
       try {
-        console.log("1");
-        const response = await axios.post(
-          `http://172.17.176.1:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.152.2.143:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -52,7 +55,6 @@ export default function Home({ route }) {
             }
           }
         );
-        console.log("2");
         if (response.data.success) {
           console.log("funcionó modal inscrip");
           openModal(); // Modal de éxito
@@ -61,8 +63,8 @@ export default function Home({ route }) {
         if (error.response) {
           let errorMessage = error.response.data.message || 'Error en la inscripción';
           console.log("error inscrip", error);
-          setErrorMessage(errorMessage.substring(12));
-          openModal2(); 
+          setErrorMessage(errorMessage.substring(12)); // error :))
+          openModal2(); //modal del error, falta css claramente
         } else {
           console.log("Error de conexión: No se pudo conectar al servidor.");
         }
@@ -72,8 +74,23 @@ export default function Home({ route }) {
       openModal2(); 
     }
   };
+
+  const editarEvento = async (evento) => {
+    setEventoRotar(evento); //agarra el evento del boton
+    setName(evento.name);
+    setDescription(evento.description);
+    setStartDate(evento.start_date);
+    setDuration_in_minutes(evento.duration_in_minutes.toString());
+    setPrice(evento.price.toString());
+    setMax_assistance(evento.max_assistance.toString());
+    setenabled_enrollement(evento.enabled_for_enrollment);
+    openModal3(); // modal especif
+
+    //form para cambiar las variables (como el de "Formulario.jsx" y llamar a la axios "put(editar)" y pushear esoss mismos datos y listo :)!
+    // para eliminar lo mismo, onpress, axios y listo
+    // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
   
-  
+  };
 
   useEffect(() => {
     selectEventsHome();
@@ -81,9 +98,11 @@ export default function Home({ route }) {
 
   const openModal = () => setModalVisible(true);
   const openModal2 = () => setModalVisible2(true);
+  const openModal3 = () => setModalVisible3(true);
   const closeModal = () => {
     setModalVisible(false);
     setModalVisible2(false);
+    setModalVisible3(false);
   };
 
   return (
@@ -96,6 +115,13 @@ export default function Home({ route }) {
             <View key={index} style={styles.card}>
               <Text style={styles.eventText}>{evento.name}</Text>
               <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
+              {username === "administrador@ad.com.ar" ? (
+                <TouchableOpacity style={styles.boton} onPress={() => editarEvento(evento)}>
+                  <Text style={styles.botonText2}>Editar</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text></Text>
+              )}
               <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
                 <Text style={styles.botonText2}>Inscribirse</Text>
               </TouchableOpacity>
@@ -138,6 +164,24 @@ export default function Home({ route }) {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>{errorMessage}</Text>
+            <TouchableOpacity style={styles.button} onPress={closeModal}>
+              <Text>Ok</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+
+      {/*act admin - modal*/}
+      <Modal
+      animationType="slide"
+      transparent={true}
+      visible={modalVisible3}
+      onRequestClose={closeModal}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>{eventorotar.name}</Text>
             <TouchableOpacity style={styles.button} onPress={closeModal}>
               <Text>Ok</Text>
             </TouchableOpacity>
