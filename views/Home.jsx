@@ -32,15 +32,16 @@ export default function Home({ route }) {
 
   const inscribirUser = async (evento) => {
     console.log(evento);
-    if (evento.enabled_for_enrollment === null ) {
+    if (evento.enabled_for_enrollment == true ) {
       try {
         const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`, {
           headers: {
             id_event: evento.id,
             description: evento.description,
+            attended: false
           },
         }, config);
-        if (response.status === 201) {
+        if (response.data.success) {
           openModal();
         }
       } catch (error) {

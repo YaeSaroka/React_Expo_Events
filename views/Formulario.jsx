@@ -13,7 +13,7 @@ export default function Formulario({ route }) {
   const [duration_in_minutes, setDuration_in_minutes] = useState(0);
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
-  const [enabled_enrollement, setenabled_enrollement] = useState(true);
+  const [enabled_for_enrollment, setenabled_enrollement] = useState(true);
   
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
@@ -71,7 +71,7 @@ export default function Formulario({ route }) {
         duration_in_minutes,
         price,
         max_assistance,
-        enabled_enrollement, 
+        enabled_for_enrollment: true, 
         id_creator_user: id_user 
       }, config);
 
@@ -100,6 +100,7 @@ export default function Formulario({ route }) {
     setModalVisible(false);
     setModalVisible2(false);
   };
+
 
   return (
     <View style={styles.container}>
@@ -161,7 +162,7 @@ export default function Formulario({ route }) {
      
       <Text style={styles.label}>Habilitar Inscripción:</Text>
       <Switch
-        value={enabled_enrollement}
+        value={enabled_for_enrollment}
         onValueChange={setenabled_enrollement}
       />
 
@@ -185,7 +186,7 @@ export default function Formulario({ route }) {
             <Text>Duración: {duration_in_minutes}</Text>
             <Text>Precio: {price}</Text>
             <Text>Máxima asistencia: {max_assistance}</Text>
-            <Text>Estado de Inscripción: {enabled_enrollement ? 'Habilitada' : 'Deshabilitada'}</Text>
+            <Text>Estado de Inscripción: {enabled_for_enrollment ? 'Habilitada' : 'Deshabilitada'}</Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.button} onPress={closeModal}>
                 <Text style={styles.buttonText}>Cancelar</Text>
@@ -215,6 +216,7 @@ export default function Formulario({ route }) {
       </Modal>
     </View>
   );
+
 }
 
 const styles = StyleSheet.create({
