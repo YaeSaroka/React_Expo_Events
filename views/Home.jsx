@@ -4,12 +4,16 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
+
+//modificar user para que tenga un true o false de administrador
+//mostrar cosas siempre con un if de admin o no y lsito :)
+
 export default function Home({ route }) {
   const [arrayEvents, setArrayEvents] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
-
+  
   const navigation = useNavigation();
   const { token, id_user } = route.params || {};
   const config = {
@@ -21,7 +25,7 @@ export default function Home({ route }) {
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
+      const response = await axios.get('http://172.17.176.1:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       setArrayEvents(filteredEvents);
     } catch (error) {
@@ -32,26 +36,44 @@ export default function Home({ route }) {
 
   const inscribirUser = async (evento) => {
     console.log(evento);
-    if (evento.enabled_for_enrollment == true ) {
+    if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`, {
-          headers: {
-            id_event: evento.id,
+        console.log("1");
+        const response = await axios.post(
+          `http://172.17.176.1:3000/api/event/${id_user}/enrollment`,
+          {
             description: evento.description,
-            attended: false
+            attended: false,
           },
-        }, config);
+          {
+            headers: {
+              id_event: evento.id,
+              Authorization: `Bearer ${token}` 
+            }
+          }
+        );
+        console.log("2");
         if (response.data.success) {
-          openModal();
+          console.log("funcionó modal inscrip");
+          openModal(); // Modal de éxito
         }
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Error en la inscripción';
-        console.error("Error en inscribirUser:", errorMessage);
+        if (error.response) {
+          let errorMessage = error.response.data.message || 'Error en la inscripción';
+          console.log("error inscrip", error);
+          setErrorMessage(errorMessage.substring(12));
+          openModal2(); 
+        } else {
+          console.log("Error de conexión: No se pudo conectar al servidor.");
+        }
       }
     } else {
-      openModal2();
+      setErrorMessage('El evento no está habilitado para la inscripción.');
+      openModal2(); 
     }
   };
+  
+  
 
   useEffect(() => {
     selectEventsHome();
@@ -89,7 +111,7 @@ export default function Home({ route }) {
         <StatusBar style="auto" />
       </View>
 
-      {/* Modal for success */}
+      {/* modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -106,7 +128,7 @@ export default function Home({ route }) {
         </View>
       </Modal>
 
-      {/* Modal for full spots */}
+      {/* Modal ERROR */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -115,7 +137,7 @@ export default function Home({ route }) {
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Cupos llenos...</Text>
+            <Text style={styles.modalTitle}>{errorMessage}</Text>
             <TouchableOpacity style={styles.button} onPress={closeModal}>
               <Text>Ok</Text>
             </TouchableOpacity>

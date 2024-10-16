@@ -11,7 +11,7 @@ export default function Register({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post('http://10.144.1.38:3000/api/user/register', {
+      const response = await axios.post('http://172.17.176.1:3000/api/user/register', {
         first_name: firstName,
         last_name: lastName,
         username,
@@ -60,6 +60,7 @@ export default function Register({ navigation }) {
         <TouchableOpacity style={styles.boxbutton} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
+
         <Text style={styles.boxp}>¿Ya tenés cuenta?</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
           <Text style={styles.linkText}>Iniciá Sesión</Text>
