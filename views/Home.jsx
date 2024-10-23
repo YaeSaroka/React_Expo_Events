@@ -10,7 +10,7 @@ export default function Home({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
   const [modalVisible3, setModalVisible3] = useState(false);
-  const [eventorotar, setEventoRotar] = useState([]);
+  const [modalVisible4, setModalVisible4] = useState(false);
   //INSERT INTO public.users (id, first_name, last_name, username, "password") VALUES (3, N'Admin', N'Admin', N'administrador@ad.com.ar', N'admin');
   const [id_event_category, setId_event_category] = useState(0);       
   const [id_event_location, setId_event_location] = useState(0);     
@@ -21,6 +21,7 @@ export default function Home({ route }) {
   const [duration_in_minutes, setDuration_in_minutes] = useState(0);
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
+  const [id_evento, setIdEvento] = useState(0);
 
   const navigation = useNavigation();
   const { token, id_user, username } = route.params || {};
@@ -33,7 +34,7 @@ export default function Home({ route }) {
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
+      const response = await axios.get('http://10.144.1.50:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       setArrayEvents(filteredEvents);
     } catch (error) {
@@ -45,7 +46,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.144.1.50:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -77,21 +78,24 @@ export default function Home({ route }) {
     }
   };
 
-  const editarEvento = async (evento) => {
+  const modalEvento_edit = async (evento) => {
     openModal3();
     setEventoRotar(evento);
     setName(evento.name || ''); //manejo de errores
     setDescription(evento.description || '');
     setStartDate(evento.start_date || '');
     setDuration_in_minutes(evento.duration_in_minutes || 0);
+    setId_event_category(evento.id_event_category);
+    setId_event_location(evento.id_event_location);
     setPrice(evento.price || 0);
     setMax_assistance(evento.max_assistance || 0);
     setenabled_enrollement(evento.enabled_for_enrollment);
+    setIdEvento(evento.id);
   };
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.144.1.38:3000/api/event/100/0', {
+      const response = await axios.put('http://10.144.1.50:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -99,24 +103,24 @@ export default function Home({ route }) {
         start_date: startDate,
         duration_in_minutes,
         price,
-        max_assistance,
         enabled_for_enrollment, 
+        max_assistance,
         id_creator_user: id_user,
+        id: id_evento, 
       }, config);
-      
+  
       if (response.data.success) {
         console.log("Evento actualizado correctamente");
         closeModal();
       } else {
-        console.log("Error al actualizar el evento");
-        console.log(response.message);
+        console.error("Error al actualizar el evento:", response.data.message);
       }
     } catch (error) {
-      console.error("Error de conexión", error);
+      console.error("Error de conexión:", error.message || error);
     }
-  }
-    //form para cambiar las variables (como el de "Formulario.jsx" y llamar a la axios "put(editar)" y pushear esoss mismos datos y listo :)!
-    // para eliminar lo mismo, onpress, axios y listo
+  };
+  
+
     // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
 
 
@@ -127,6 +131,7 @@ export default function Home({ route }) {
   const openModal = () => setModalVisible(true);
   const openModal2 = () => setModalVisible2(true);
   const openModal3 = () => setModalVisible3(true);
+  const modalEvento_eliminar = () => setModalVisible4(); //modal de estas seguro de eliminar?
   const closeModal = () => {
     setModalVisible(false);
     setModalVisible2(false);
@@ -144,9 +149,14 @@ export default function Home({ route }) {
               <Text style={styles.eventText}>{evento.name}</Text>
               <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
               {username === "administrador@ad.com.ar" ? (
-                <TouchableOpacity style={styles.boton} onPress={() => editarEvento(evento)}>
+                <>
+                <TouchableOpacity style={styles.boton} onPress={() => modalEvento_edit(evento)}>
                   <Text style={styles.botonText2}>Editar</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.boton} onPress={() => modalEvento_eliminar(evento)}>
+                  <Text style={styles.botonText2}>Eliminar</Text>
+                </TouchableOpacity>
+              </>
               ) : (
                 <Text></Text>
               )}
@@ -200,7 +210,7 @@ export default function Home({ route }) {
       </Modal>
 
 
-      {/*act admin - modal*/}
+      {/*act admin - modal edit event*/}
       <Modal
         animationType="slide"
         transparent={true}
@@ -250,6 +260,28 @@ export default function Home({ route }) {
               keyboardType="numeric"
               onChangeText={setMax_assistance}
             />
+            
+            <TouchableOpacity style={styles.boton} onPress={editEvent}>
+              <Text style={styles.botonText}>Guardar Cambios</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.boton} onPress={closeModal}>
+              <Text style={styles.botonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible3}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Editar Evento</Text>
+
+            <Text> ¿Estás seguro de eliminar este evento? </Text>
             
             <TouchableOpacity style={styles.boton} onPress={editEvent}>
               <Text style={styles.botonText}>Guardar Cambios</Text>
