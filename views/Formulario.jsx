@@ -32,7 +32,7 @@ export default function Formulario({ route }) {
 
   const locations = async () => { 
     try {
-      const response = await axios.get('http://10.144.1.50:3000/api/event-location', config);
+      const response = await axios.get('http://10.152.2.2:3000/api/event-location', config);
       setLocations(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load locations');
@@ -47,7 +47,7 @@ export default function Formulario({ route }) {
 
   const categorias = async () => { 
     try {
-      const response = await axios.get('http://10.144.1.50:3000/api/event-category', config);
+      const response = await axios.get('http://10.152.2.2:3000/api/event-category', config);
       setCategorias(response.data);
     } catch (error) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to load categories');
@@ -62,7 +62,7 @@ export default function Formulario({ route }) {
 
   const handleCreateEvent = async () => { 
     try {
-      const response = await axios.post('http://10.144.1.50:3000/api/event', {
+      const response = await axios.post('http://10.152.2.2:3000/api/event', {
         name,
         description,
         id_event_category,

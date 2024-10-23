@@ -11,7 +11,10 @@ export default function Home({ route }) {
   const [modalVisible2, setModalVisible2] = useState(false);
   const [modalVisible3, setModalVisible3] = useState(false);
   const [modalVisible4, setModalVisible4] = useState(false);
+  const [eventoActual, setEventoElegido] = useState({});
   //INSERT INTO public.users (id, first_name, last_name, username, "password") VALUES (3, N'Admin', N'Admin', N'administrador@ad.com.ar', N'admin');
+
+  //falta corregir el tema de enabled, no se cambia a false cuando debería cambiar.
   const [id_event_category, setId_event_category] = useState(0);       
   const [id_event_location, setId_event_location] = useState(0);     
   const [enabled_for_enrollment, setenabled_enrollement] = useState(true);
@@ -29,12 +32,14 @@ export default function Home({ route }) {
     headers: { Authorization: `Bearer ${token}` }
   };
 
+  
+
   const getCurrentDate = () => new Date().toISOString();
   const hoy = getCurrentDate();
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.144.1.50:3000/api/event/100/0');
+      const response = await axios.get('http://10.152.2.2:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       setArrayEvents(filteredEvents);
     } catch (error) {
@@ -46,7 +51,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.144.1.50:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.152.2.2:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -54,7 +59,7 @@ export default function Home({ route }) {
           {
             headers: {
               id_event: evento.id,
-              Authorization: `Bearer ${token}` 
+              authorization: `Bearer ${token}` 
             }
           }
         );
@@ -80,7 +85,6 @@ export default function Home({ route }) {
 
   const modalEvento_edit = async (evento) => {
     openModal3();
-    setEventoRotar(evento);
     setName(evento.name || ''); //manejo de errores
     setDescription(evento.description || '');
     setStartDate(evento.start_date || '');
@@ -95,7 +99,7 @@ export default function Home({ route }) {
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.144.1.50:3000/api/event', {
+      const response = await axios.put('http://10.152.2.2:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -111,6 +115,7 @@ export default function Home({ route }) {
   
       if (response.data.success) {
         console.log("Evento actualizado correctamente");
+        await selectEventsHome(); // CARGA TODOS LOS EVENTOS DE VUELTA ANTE LOS CAMBIOS :)
         closeModal();
       } else {
         console.error("Error al actualizar el evento:", response.data.message);
@@ -120,7 +125,23 @@ export default function Home({ route }) {
     }
   };
   
+  const eliminarEvento = async () => {
+    const evento_id = eventoActual.id
+    try {
+        const response = await axios.delete(`http://10.152.2.2:3000/api/event/${evento_id}`, config);
 
+        if (response.data.success) {
+            console.log("Evento eliminado correctamente");
+            await selectEventsHome(); // CARGA TODOS LOS EVENTOS DE VUELTA ANTE LOS CAMBIOS :)
+            // dice --> update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»      ((funciona))
+            closeModal();
+        } else {
+            console.error("Error al eliminar el evento:", response.data.message);
+        }
+    } catch (error) {
+        console.error("Error de conexión:", error.message || error);
+    }
+  };
     // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
 
 
@@ -131,11 +152,15 @@ export default function Home({ route }) {
   const openModal = () => setModalVisible(true);
   const openModal2 = () => setModalVisible2(true);
   const openModal3 = () => setModalVisible3(true);
-  const modalEvento_eliminar = () => setModalVisible4(); //modal de estas seguro de eliminar?
+  const modalEvento_eliminar = (evento) => {
+    setModalVisible4(true); //modal de estas seguro de eliminar?
+    setEventoElegido(evento);
+  } 
   const closeModal = () => {
     setModalVisible(false);
     setModalVisible2(false);
     setModalVisible3(false);
+    setModalVisible4(false);
   };
 
   return (
@@ -146,6 +171,7 @@ export default function Home({ route }) {
         {arrayEvents.length > 0 ? (
           arrayEvents.map((evento, index) => (
             <View key={index} style={styles.card}>
+      
               <Text style={styles.eventText}>{evento.name}</Text>
               <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
               {username === "administrador@ad.com.ar" ? (
@@ -201,7 +227,7 @@ export default function Home({ route }) {
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{errorMessage}</Text>
+            <Text style={styles.modalTitle}>Ups!   {errorMessage}</Text>
             <TouchableOpacity style={styles.button} onPress={closeModal}>
               <Text>Ok</Text>
             </TouchableOpacity>
@@ -274,17 +300,17 @@ export default function Home({ route }) {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible3}
+        visible={modalVisible4}
         onRequestClose={closeModal}
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Editar Evento</Text>
+            <Text style={styles.modalTitle}>Eliminar</Text>
 
             <Text> ¿Estás seguro de eliminar este evento? </Text>
             
-            <TouchableOpacity style={styles.boton} onPress={editEvent}>
-              <Text style={styles.botonText}>Guardar Cambios</Text>
+            <TouchableOpacity style={styles.boton} onPress={eliminarEvento}>
+              <Text style={styles.botonText}>Confirmar</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.boton} onPress={closeModal}>
               <Text style={styles.botonText}>Cancelar</Text>
