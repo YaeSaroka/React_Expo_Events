@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, TextInput } from 'react-native';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -12,25 +12,28 @@ export default function Home({ route }) {
   const [modalVisible3, setModalVisible3] = useState(false);
   const [eventorotar, setEventoRotar] = useState([]);
   //INSERT INTO public.users (id, first_name, last_name, username, "password") VALUES (3, N'Admin', N'Admin', N'administrador@ad.com.ar', N'admin');
+  const [id_event_category, setId_event_category] = useState(0);       
+  const [id_event_location, setId_event_location] = useState(0);     
+  const [enabled_for_enrollment, setenabled_enrollement] = useState(true);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [id_event_category, setId_event_category] = useState(0);       
-  const [id_event_location, setId_event_location] = useState(0);       
   const [startDate, setStartDate] = useState('');
   const [duration_in_minutes, setDuration_in_minutes] = useState(0);
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
-  const [enabled_for_enrollment, setenabled_enrollement] = useState(true);
 
   const navigation = useNavigation();
   const { token, id_user, username } = route.params || {};
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
 
   const getCurrentDate = () => new Date().toISOString();
   const hoy = getCurrentDate();
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.152.2.143:3000/api/event/100/0');
+      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       setArrayEvents(filteredEvents);
     } catch (error) {
@@ -40,10 +43,9 @@ export default function Home({ route }) {
   };
 
   const inscribirUser = async (evento) => {
-    console.log(evento);
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.152.2.143:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -76,21 +78,47 @@ export default function Home({ route }) {
   };
 
   const editarEvento = async (evento) => {
-    setEventoRotar(evento); //agarra el evento del boton
-    setName(evento.name);
-    setDescription(evento.description);
-    setStartDate(evento.start_date);
-    setDuration_in_minutes(evento.duration_in_minutes.toString());
-    setPrice(evento.price.toString());
-    setMax_assistance(evento.max_assistance.toString());
+    openModal3();
+    setEventoRotar(evento);
+    setName(evento.name || ''); //manejo de errores
+    setDescription(evento.description || '');
+    setStartDate(evento.start_date || '');
+    setDuration_in_minutes(evento.duration_in_minutes || 0);
+    setPrice(evento.price || 0);
+    setMax_assistance(evento.max_assistance || 0);
     setenabled_enrollement(evento.enabled_for_enrollment);
-    openModal3(); // modal especif
+  };
 
+  const editEvent = async () => {
+    try {
+      const response = await axios.put('http://10.144.1.38:3000/api/event/100/0', {
+        name,
+        description,
+        id_event_category,
+        id_event_location,
+        start_date: startDate,
+        duration_in_minutes,
+        price,
+        max_assistance,
+        enabled_for_enrollment, 
+        id_creator_user: id_user,
+      }, config);
+      
+      if (response.data.success) {
+        console.log("Evento actualizado correctamente");
+        closeModal();
+      } else {
+        console.log("Error al actualizar el evento");
+        console.log(response.message);
+      }
+    } catch (error) {
+      console.error("Error de conexión", error);
+    }
+  }
     //form para cambiar las variables (como el de "Formulario.jsx" y llamar a la axios "put(editar)" y pushear esoss mismos datos y listo :)!
     // para eliminar lo mismo, onpress, axios y listo
     // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
-  
-  };
+
 
   useEffect(() => {
     selectEventsHome();
@@ -174,16 +202,60 @@ export default function Home({ route }) {
 
       {/*act admin - modal*/}
       <Modal
-      animationType="slide"
-      transparent={true}
-      visible={modalVisible3}
-      onRequestClose={closeModal}
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible3}
+        onRequestClose={closeModal}
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{eventorotar.name}</Text>
-            <TouchableOpacity style={styles.button} onPress={closeModal}>
-              <Text>Ok</Text>
+            <Text style={styles.modalTitle}>Editar Evento</Text>
+
+            <TextInput
+              style={styles.input}
+              value={name}
+              placeholder="Nombre"
+              onChangeText={setName}
+            />
+            <TextInput
+              style={styles.input}
+              value={description}
+              placeholder="Descripción"
+              onChangeText={setDescription}
+            />
+            <TextInput
+              style={styles.input}
+              value={startDate}
+              placeholder="Fecha de Inicio"
+              onChangeText={setStartDate}
+            />
+            <TextInput
+              style={styles.input}
+              value={duration_in_minutes}
+              placeholder="Duración (minutos)"
+              keyboardType="numeric"
+              onChangeText={setDuration_in_minutes}
+            />
+            <TextInput
+              style={styles.input}
+              value={price}
+              placeholder="Precio"
+              keyboardType="numeric"
+              onChangeText={setPrice}
+            />
+            <TextInput
+              style={styles.input}
+              value={max_assistance}
+              placeholder="Máximo de Asistentes"
+              keyboardType="numeric"
+              onChangeText={setMax_assistance}
+            />
+            
+            <TouchableOpacity style={styles.boton} onPress={editEvent}>
+              <Text style={styles.botonText}>Guardar Cambios</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.boton} onPress={closeModal}>
+              <Text style={styles.botonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -282,5 +354,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
     color: '#007bff',
+  },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginVertical: 10,
+    width: '100%',
   },
 });
