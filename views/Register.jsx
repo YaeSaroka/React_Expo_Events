@@ -11,7 +11,7 @@ export default function Register({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const response = await axios.post('http://10.152.2.2:3000/api/user/register', {
+      const response = await axios.post('http://10.144.1.38:3000/api/user/register', {
         first_name: firstName,
         last_name: lastName,
         username,

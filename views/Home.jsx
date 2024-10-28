@@ -6,11 +6,14 @@ import { useNavigation } from '@react-navigation/native';
 
 export default function Home({ route }) {
   const [arrayEvents, setArrayEvents] = useState([]);
+  const [arrayEvents_pasados, setArrayEvents_pasados] = useState([]);
+  const [personas_enroll, setdeclared ] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
   const [modalVisible3, setModalVisible3] = useState(false);
   const [modalVisible4, setModalVisible4] = useState(false);
+  const [modalVisible5, setModalVisible5] = useState(false);
   const [eventoActual, setEventoElegido] = useState({});
   //INSERT INTO public.users (id, first_name, last_name, username, "password") VALUES (3, N'Admin', N'Admin', N'administrador@ad.com.ar', N'admin');
 
@@ -33,15 +36,16 @@ export default function Home({ route }) {
   };
 
   
-
   const getCurrentDate = () => new Date().toISOString();
   const hoy = getCurrentDate();
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.152.2.2:3000/api/event/100/0');
+      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
+      const filteredEvents_pasados = response.data.collection.filter(evento => evento.start_date < hoy);
       setArrayEvents(filteredEvents);
+      setArrayEvents_pasados(filteredEvents_pasados);
     } catch (error) {
       setErrorMessage('Error al cargar eventos');
       console.error(error);
@@ -51,7 +55,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.152.2.2:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -99,7 +103,7 @@ export default function Home({ route }) {
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.152.2.2:3000/api/event', {
+      const response = await axios.put('http://10.144.1.38:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -128,12 +132,12 @@ export default function Home({ route }) {
   const eliminarEvento = async () => {
     const evento_id = eventoActual.id
     try {
-        const response = await axios.delete(`http://10.152.2.2:3000/api/event/${evento_id}`, config);
+        const response = await axios.delete(`http://10.144.1.38:3000/api/event/${evento_id}`, config);
 
         if (response.data.success) {
             console.log("Evento eliminado correctamente");
             await selectEventsHome(); // CARGA TODOS LOS EVENTOS DE VUELTA ANTE LOS CAMBIOS :)
-            // dice --> update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»      ((funciona))
+            // aveces, depende del día, dice --> update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»      ((funciona))
             closeModal();
         } else {
             console.error("Error al eliminar el evento:", response.data.message);
@@ -144,7 +148,6 @@ export default function Home({ route }) {
   };
     // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
 
-
   useEffect(() => {
     selectEventsHome();
   }, []);
@@ -153,14 +156,31 @@ export default function Home({ route }) {
   const openModal2 = () => setModalVisible2(true);
   const openModal3 = () => setModalVisible3(true);
   const modalEvento_eliminar = (evento) => {
+    setEventoElegido(evento)
     setModalVisible4(true); //modal de estas seguro de eliminar?
-    setEventoElegido(evento);
   } 
+  const modalEvento_detalle = async (evento) => {
+    setModalVisible5(true); 
+    setEventoElegido(evento);
+    try {
+        const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, config);
+
+        if (response.data.success) {
+            const personas = response.data.personas.filter(persona => evento.id_event === persona.id_event);
+            console.log(personas); 
+        } else {
+            console.error("Error al obtener los datos del evento:", response.data.message);
+        }
+    } catch (error) {
+        console.error("Error de conexión:", error.message || error);
+    }
+}
   const closeModal = () => {
     setModalVisible(false);
     setModalVisible2(false);
     setModalVisible3(false);
     setModalVisible4(false);
+    setModalVisible5(false);
   };
 
   return (
@@ -171,7 +191,6 @@ export default function Home({ route }) {
         {arrayEvents.length > 0 ? (
           arrayEvents.map((evento, index) => (
             <View key={index} style={styles.card}>
-      
               <Text style={styles.eventText}>{evento.name}</Text>
               <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
               {username === "administrador@ad.com.ar" ? (
@@ -189,10 +208,32 @@ export default function Home({ route }) {
               <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
                 <Text style={styles.botonText2}>Inscribirse</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.boton} onPress={() => modalEvento_detalle(evento)}>
+                  <Text style={styles.botonText2}>Ver detalle</Text>
+                </TouchableOpacity>
             </View>
           ))
         ) : (
           <Text style={styles.noEventsText}>No hay eventos</Text>
+        )}
+
+
+        {username === "administrador@ad.com.ar" ? (
+          <>
+            <Text> Eventos Pasados...</Text>
+            {arrayEvents_pasados.length > 0 ? (
+              arrayEvents_pasados.map((evento, index) => (
+                <View key={index} style={styles.card}>
+                  <Text style={styles.eventText}>{evento.name}</Text>
+                  <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noEventsText}>No hay eventos pasados</Text>
+            )}
+          </>
+        ) : (
+          <Text style={styles.noEventsText}>No hay eventos pasados</Text>
         )}
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
         <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
@@ -217,7 +258,6 @@ export default function Home({ route }) {
           </View>
         </View>
       </Modal>
-
       {/* Modal ERROR */}
       <Modal
         animationType="slide"
@@ -234,8 +274,6 @@ export default function Home({ route }) {
           </View>
         </View>
       </Modal>
-
-
       {/*act admin - modal edit event*/}
       <Modal
         animationType="slide"
@@ -296,7 +334,7 @@ export default function Home({ route }) {
           </View>
         </View>
       </Modal>
-
+      {/* modal eliminaaaaaaaar :) */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -316,6 +354,27 @@ export default function Home({ route }) {
               <Text style={styles.botonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+
+      {/* modal detalle de evento */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible5}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Detalles de evento</Text>
+            <Text style={styles.eventText}>{eventoActual.name}</Text>
+            <Text style={styles.dateText}>{eventoActual.start_date}</Text>
+            <Text style={styles.modalTitle}>Listado de inscriptos</Text>
+          </View>
+          <TouchableOpacity style={styles.boton} onPress={closeModal}>
+              <Text style={styles.botonText}>Cerrar</Text>
+            </TouchableOpacity>
         </View>
       </Modal>
     </>
