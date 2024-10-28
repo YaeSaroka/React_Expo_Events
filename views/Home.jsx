@@ -7,7 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 export default function Home({ route }) {
   const [arrayEvents, setArrayEvents] = useState([]);
   const [arrayEvents_pasados, setArrayEvents_pasados] = useState([]);
-  const [personas_enroll, setdeclared ] = useState([]);
+  const [personas_enroll, setPersonasenroll ] = useState([]);
+  const [persona_nombre, setPersonaNombre ] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
@@ -146,6 +147,18 @@ export default function Home({ route }) {
         console.error("Error de conexión:", error.message || error);
     }
   };
+
+  const cargarNombreUsers = async (persona_id) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/user/find/${persona_id}`, config);
+      if (response.data) {
+        return response.data; // Deberías devolver el nombre directamente
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error.message || error);
+    }
+    return null; // Retornar null si hay un error
+  };
     // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
 
   useEffect(() => {
@@ -163,18 +176,26 @@ export default function Home({ route }) {
     setModalVisible5(true); 
     setEventoElegido(evento);
     try {
-        const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, config);
-
-        if (response.data.success) {
-            const personas = response.data.personas.filter(persona => evento.id_event === persona.id_event);
-            console.log(personas); 
-        } else {
-            console.error("Error al obtener los datos del evento:", response.data.message);
-        }
+      const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, config);
+      if (response && response.data) {
+        const personas = response.data;
+        if (Array.isArray(personas)) {
+          const personasFiltradas = personas.filter(persona => evento.id === persona.id_event);
+          const nombres = await Promise.all(personasFiltradas.map(async (persona) => {
+            const nombre = await cargarNombreUsers(persona.id); // Llama a la función aquí
+            return {
+              ...persona,
+              nombre: nombre ? nombre.first_name + ' ' + nombre.last_name : 'error',
+            };
+          }));
+          setPersonasenroll(nombres);
+        } 
+      }
     } catch (error) {
-        console.error("Error de conexión:", error.message || error);
+      console.error("Error de conexión:", error.message || error);
     }
-}
+  };
+
   const closeModal = () => {
     setModalVisible(false);
     setModalVisible2(false);
@@ -371,6 +392,16 @@ export default function Home({ route }) {
             <Text style={styles.eventText}>{eventoActual.name}</Text>
             <Text style={styles.dateText}>{eventoActual.start_date}</Text>
             <Text style={styles.modalTitle}>Listado de inscriptos</Text>
+            {personas_enroll.length > 0 ? (
+              personas_enroll.map((persona, index) => (
+                <View key={index} style={styles.card}>
+                  <Text style={styles.eventText}>{persona.id}</Text>
+                  <Text>{persona.nombre}</Text> {/* Mostrar el nombre aquí */}
+                </View>
+              ))
+            ) : (
+              <Text> No hay personas inscriptas... todavía</Text>
+            )}
           </View>
           <TouchableOpacity style={styles.boton} onPress={closeModal}>
               <Text style={styles.botonText}>Cerrar</Text>
