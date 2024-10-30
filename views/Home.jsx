@@ -7,7 +7,6 @@ import { useNavigation } from '@react-navigation/native';
 export default function Home({ route }) {
   const [arrayEvents, setArrayEvents] = useState([]);
   const [arrayEvents_pasados, setArrayEvents_pasados] = useState([]);
-  const [personas_enroll, setPersonasenroll ] = useState([]);
   const [persona_nombre, setPersonaNombre ] = useState([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -149,17 +148,23 @@ export default function Home({ route }) {
   };
 
   const cargarNombreUsers = async (persona_id) => {
+    console.log(persona_id, "- id");
     try {
-      const response = await axios.get(`http://localhost:3000/api/user/find/${persona_id}`, config);
+      const response = await axios.get(`http://10.144.1.38:3000/api/user/find`, 
+      {
+        id: persona_id,
+      }, config);
+      
+      console.log(response, " - carga");
       if (response.data) {
         return response.data; // Deberías devolver el nombre directamente
       }
     } catch (error) {
+      console.log("error");
       console.error("Error de conexión:", error.message || error);
     }
-    return null; // Retornar null si hay un error
+    return null; 
   };
-    // eventos pasados --> filtrar eventos antes de hoy (filter(evento => evento.start_date < hoy)y hacer un array aparte con esos y mostrarlos!
 
   useEffect(() => {
     selectEventsHome();
@@ -181,14 +186,13 @@ export default function Home({ route }) {
         const personas = response.data;
         if (Array.isArray(personas)) {
           const personasFiltradas = personas.filter(persona => evento.id === persona.id_event);
-          const nombres = await Promise.all(personasFiltradas.map(async (persona) => {
-            const nombre = await cargarNombreUsers(persona.id); // Llama a la función aquí
-            return {
-              ...persona,
-              nombre: nombre ? nombre.first_name + ' ' + nombre.last_name : 'error',
-            };
-          }));
-          setPersonasenroll(nombres);
+          personasFiltradas.forEach((persona) => {
+            const nombre = cargarNombreUsers(persona.id_user);
+            console.log(nombre, "  - nombre y id?") //busca quien es 
+            persona_nombre.push(nombre);
+            console.log(persona_nombre, " nombre!");
+          });
+          setPersonaNombre(persona_nombre);
         } 
       }
     } catch (error) {
@@ -392,8 +396,8 @@ export default function Home({ route }) {
             <Text style={styles.eventText}>{eventoActual.name}</Text>
             <Text style={styles.dateText}>{eventoActual.start_date}</Text>
             <Text style={styles.modalTitle}>Listado de inscriptos</Text>
-            {personas_enroll.length > 0 ? (
-              personas_enroll.map((persona, index) => (
+            {persona_nombre.length > 0 ? (
+              persona_nombre.map((persona, index) => (
                 <View key={index} style={styles.card}>
                   <Text style={styles.eventText}>{persona.id}</Text>
                   <Text>{persona.nombre}</Text> {/* Mostrar el nombre aquí */}
