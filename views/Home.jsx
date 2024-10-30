@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -41,7 +41,7 @@ export default function Home({ route }) {
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
+      const response = await axios.get('http://10.152.2.141:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       const filteredEvents_pasados = response.data.collection.filter(evento => evento.start_date < hoy);
       setArrayEvents(filteredEvents);
@@ -55,7 +55,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.152.2.141:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -73,7 +73,7 @@ export default function Home({ route }) {
         }
       } catch (error) {
         if (error.response) {
-          let errorMessage = error.response.data.message || 'Error en la inscripción';
+          let errorMessage = error.response.data || 'Error en la inscripción';
           console.log("error inscrip", error);
           setErrorMessage(errorMessage.substring(12)); // error :))
           openModal2(); //modal del error, falta css claramente
@@ -103,7 +103,7 @@ export default function Home({ route }) {
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.144.1.38:3000/api/event', {
+      const response = await axios.put('http://10.152.2.141:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -131,9 +131,11 @@ export default function Home({ route }) {
   
   const eliminarEvento = async () => {
     const evento_id = eventoActual.id
+    console.log(evento_id);
     try {
-        const response = await axios.delete(`http://10.144.1.38:3000/api/event/${evento_id}`, config);
-
+      console.log("hola -- ")
+      const response = await axios.delete(`http://10.152.2.141:3000/api/event/${evento_id}`, config);
+     //Error error: update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»    --> aveces pasa y quiere decir que se eliminó
         if (response.data.success) {
             console.log("Evento eliminado correctamente");
             await selectEventsHome(); // CARGA TODOS LOS EVENTOS DE VUELTA ANTE LOS CAMBIOS :)
@@ -147,24 +149,7 @@ export default function Home({ route }) {
     }
   };
 
-  const cargarNombreUsers = async (persona_id) => {
-    console.log(persona_id, "- id");
-    try {
-      const response = await axios.get(`http://10.144.1.38:3000/api/user/find`, 
-      {
-        id: persona_id,
-      }, config);
-      
-      console.log(response, " - carga");
-      if (response.data) {
-        return response.data; // Deberías devolver el nombre directamente
-      }
-    } catch (error) {
-      console.log("error");
-      console.error("Error de conexión:", error.message || error);
-    }
-    return null; 
-  };
+ 
 
   useEffect(() => {
     selectEventsHome();
@@ -178,26 +163,49 @@ export default function Home({ route }) {
     setModalVisible4(true); //modal de estas seguro de eliminar?
   } 
   const modalEvento_detalle = async (evento) => {
-    setModalVisible5(true); 
+    setModalVisible5(true);
     setEventoElegido(evento);
+    
     try {
-      const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, config);
-      if (response && response.data) {
+      const response = await axios.get(`http://10.152.2.141:3000/api/event-enrollment/`, {
+        params: { id: evento.id },
+      });
+
+      if (response?.data) {
         const personas = response.data;
         if (Array.isArray(personas)) {
           const personasFiltradas = personas.filter(persona => evento.id === persona.id_event);
-          personasFiltradas.forEach((persona) => {
-            const nombre = cargarNombreUsers(persona.id_user);
-            console.log(nombre, "  - nombre y id?") //busca quien es 
-            persona_nombre.push(nombre);
-            console.log(persona_nombre, " nombre!");
-          });
-          setPersonaNombre(persona_nombre);
-        } 
+
+          if (personasFiltradas.length > 0) {
+            const nuevosNombres = await Promise.all(
+              personasFiltradas.map(async (persona) => {
+                const nombre = await cargarNombreUsers(persona.id_user);
+                return { id: persona.id_user, ...nombre }; 
+              })
+            );
+
+            setPersonaNombre(nuevosNombres);
+          } else {
+            console.log("No se encontraron personas para este evento.");
+          }
+        }
       }
     } catch (error) {
       console.error("Error de conexión:", error.message || error);
     }
+  };
+  const cargarNombreUsers = async (persona_id) => {
+    try {
+      const response = await axios.get(`http://10.152.2.141:3000/api/user/find`, {
+        params: { id: persona_id }, 
+      });
+      if (response.data) {
+        return { first_name: response.data.first_name, last_name: response.data.last_name };
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error.message || error);
+    }
+    return null;
   };
 
   const closeModal = () => {
@@ -206,20 +214,24 @@ export default function Home({ route }) {
     setModalVisible3(false);
     setModalVisible4(false);
     setModalVisible5(false);
+    setPersonaNombre([]);
   };
+  useEffect(() => {
+    console.log("persona_nombre actualizado:", persona_nombre);
+  }, [persona_nombre]);
 
   return (
     <>
-      <View style={styles.container}>
-        <Text style={styles.title}>Home</Text>
-        <Text style={styles.subtitle}>Siguientes eventos:</Text>
-        {arrayEvents.length > 0 ? (
-          arrayEvents.map((evento, index) => (
-            <View key={index} style={styles.card}>
-              <Text style={styles.eventText}>{evento.name}</Text>
-              <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
-              {username === "administrador@ad.com.ar" ? (
-                <>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Home</Text>
+      <Text style={styles.subtitle}>Siguientes eventos:</Text>
+      {arrayEvents.length > 0 ? (
+        arrayEvents.map((evento, index) => (
+          <View key={index} style={styles.card}>
+            <Text style={styles.eventText}>{evento.name}</Text>
+            <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
+            {username === "administrador@ad.com.ar" ? (
+              <>
                 <TouchableOpacity style={styles.boton} onPress={() => modalEvento_edit(evento)}>
                   <Text style={styles.botonText2}>Editar</Text>
                 </TouchableOpacity>
@@ -227,45 +239,41 @@ export default function Home({ route }) {
                   <Text style={styles.botonText2}>Eliminar</Text>
                 </TouchableOpacity>
               </>
-              ) : (
-                <Text></Text>
-              )}
-              <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
-                <Text style={styles.botonText2}>Inscribirse</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.boton} onPress={() => modalEvento_detalle(evento)}>
-                  <Text style={styles.botonText2}>Ver detalle</Text>
-                </TouchableOpacity>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.noEventsText}>No hay eventos</Text>
-        )}
+            ) : null}
+            <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
+              <Text style={styles.botonText2}>Inscribirse</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.boton} onPress={() => modalEvento_detalle(evento)}>
+              <Text style={styles.botonText2}>Ver detalle</Text>
+            </TouchableOpacity>
+          </View>
+        ))
+      ) : (
+        <Text style={styles.noEventsText}>No hay eventos</Text>
+      )}
 
+      {username === "administrador@ad.com.ar" && (
+        <>
+          <Text> Eventos Pasados...</Text>
+          {arrayEvents_pasados.length > 0 ? (
+            arrayEvents_pasados.map((evento, index) => (
+              <View key={index} style={styles.card}>
+                <Text style={styles.eventText}>{evento.name}</Text>
+                <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noEventsText}>No hay eventos pasados</Text>
+          )}
+        </>
+      )}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+      <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
+        <Text style={styles.botonText}>+</Text>
+      </TouchableOpacity>
+      <StatusBar style="auto" />
+    </ScrollView>
 
-        {username === "administrador@ad.com.ar" ? (
-          <>
-            <Text> Eventos Pasados...</Text>
-            {arrayEvents_pasados.length > 0 ? (
-              arrayEvents_pasados.map((evento, index) => (
-                <View key={index} style={styles.card}>
-                  <Text style={styles.eventText}>{evento.name}</Text>
-                  <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noEventsText}>No hay eventos pasados</Text>
-            )}
-          </>
-        ) : (
-          <Text style={styles.noEventsText}>No hay eventos pasados</Text>
-        )}
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-        <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
-          <Text style={styles.botonText}>+</Text>
-        </TouchableOpacity>
-        <StatusBar style="auto" />
-      </View>
 
       {/* modal */}
       <Modal
@@ -400,16 +408,16 @@ export default function Home({ route }) {
               persona_nombre.map((persona, index) => (
                 <View key={index} style={styles.card}>
                   <Text style={styles.eventText}>{persona.id}</Text>
-                  <Text>{persona.nombre}</Text> {/* Mostrar el nombre aquí */}
+                  <Text>{`${persona.first_name} ${persona.last_name}`}</Text>
                 </View>
               ))
             ) : (
-              <Text> No hay personas inscriptas... todavía</Text>
+              <Text>No hay personas inscriptas... todavía</Text>
             )}
           </View>
           <TouchableOpacity style={styles.boton} onPress={closeModal}>
-              <Text style={styles.botonText}>Cerrar</Text>
-            </TouchableOpacity>
+            <Text style={styles.botonText}>Cerrar</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </>
@@ -418,41 +426,41 @@ export default function Home({ route }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#ffd9df',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 20,
   },
   title: {
-    fontSize: 19,
+    fontSize: 24,
     color: '#333',
-    marginBottom: 40,
+    marginBottom: 20,
     fontWeight: 'bold',
   },
   subtitle: {
     fontWeight: 'bold',
-    fontSize: 30,
+    fontSize: 28,
     color: '#7f6065',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   card: {
-    backgroundColor: '#fff',
-    padding: 15,
+    backgroundColor: '#ffffff',
+    padding: 20,
     borderRadius: 10,
-    elevation: 3,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 6,
     marginVertical: 10,
-    width: '50%',
+    width: '90%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   eventText: {
     fontSize: 18,
-    fontWeight: 'medium',
+    fontWeight: '600',
     color: '#444',
   },
   dateText: {
@@ -462,6 +470,7 @@ const styles = StyleSheet.create({
   noEventsText: {
     fontSize: 16,
     color: '#888',
+    marginTop: 10,
   },
   errorText: {
     fontSize: 16,
@@ -472,8 +481,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#7f6065',
     borderRadius: 5,
-    width: 100,
+    width: 120,
     alignItems: 'center',
+    marginTop: 10,
   },
   botonText: {
     color: '#fff',
@@ -481,39 +491,39 @@ const styles = StyleSheet.create({
   },
   botonText2: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
   },
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark background
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContainer: {
     width: '80%',
-    padding: 20,
+    padding: 25,
     backgroundColor: '#ffffff',
     borderRadius: 10,
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 15,
     color: '#007bff',
   },
   input: {
-    height: 40,
+    height: 45,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
     padding: 10,
-    marginVertical: 10,
+    marginVertical: 12,
     width: '100%',
   },
 });
