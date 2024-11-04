@@ -41,7 +41,7 @@ export default function Home({ route }) {
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.152.2.141:3000/api/event/100/0');
+      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       const filteredEvents_pasados = response.data.collection.filter(evento => evento.start_date < hoy);
       setArrayEvents(filteredEvents);
@@ -55,7 +55,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.152.2.141:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -103,7 +103,7 @@ export default function Home({ route }) {
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.152.2.141:3000/api/event', {
+      const response = await axios.put('http://10.144.1.38:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -134,7 +134,7 @@ export default function Home({ route }) {
     console.log(evento_id);
     try {
       console.log("hola -- ")
-      const response = await axios.delete(`http://10.152.2.141:3000/api/event/${evento_id}`, config);
+      const response = await axios.delete(`http://10.144.1.38:3000/api/event/${evento_id}`, config);
      //Error error: update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»    --> aveces pasa y quiere decir que se eliminó
         if (response.data.success) {
             console.log("Evento eliminado correctamente");
@@ -167,7 +167,7 @@ export default function Home({ route }) {
     setEventoElegido(evento);
     
     try {
-      const response = await axios.get(`http://10.152.2.141:3000/api/event-enrollment/`, {
+      const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, {
         params: { id: evento.id },
       });
 
@@ -196,7 +196,7 @@ export default function Home({ route }) {
   };
   const cargarNombreUsers = async (persona_id) => {
     try {
-      const response = await axios.get(`http://10.152.2.141:3000/api/user/find`, {
+      const response = await axios.get(`http://10.144.1.38:3000/api/user/find`, {
         params: { id: persona_id }, 
       });
       if (response.data) {
@@ -223,42 +223,44 @@ export default function Home({ route }) {
   return (
     <>
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Home</Text>
       <Text style={styles.subtitle}>Siguientes eventos:</Text>
       {arrayEvents.length > 0 ? (
         arrayEvents.map((evento, index) => (
           <View key={index} style={styles.card}>
             <Text style={styles.eventText}>{evento.name}</Text>
             <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
-            {username === "administrador@ad.com.ar" ? (
-              <>
-                <TouchableOpacity style={styles.boton} onPress={() => modalEvento_edit(evento)}>
-                  <Text style={styles.botonText2}>Editar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.boton} onPress={() => modalEvento_eliminar(evento)}>
-                  <Text style={styles.botonText2}>Eliminar</Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
-            <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
-              <Text style={styles.botonText2}>Inscribirse</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.boton} onPress={() => modalEvento_detalle(evento)}>
-              <Text style={styles.botonText2}>Ver detalle</Text>
-            </TouchableOpacity>
-          </View>
+              {username === "administrador@ad.com.ar" ? (
+                <>
+                  <TouchableOpacity style={styles.boton} onPress={() => modalEvento_edit(evento)}>
+                    <Text style={styles.botonText2}>Editar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.boton} onPress={() => modalEvento_eliminar(evento)}>
+                    <Text style={styles.botonText2}>Eliminar</Text>
+                  </TouchableOpacity>
+                </>
+              ) : null}
+              <TouchableOpacity style={styles.boton} onPress={() => inscribirUser(evento)}>
+                <Text style={styles.botonText2}>Inscribirse</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.boton} onPress={() => modalEvento_detalle(evento)}>
+                <Text style={styles.botonText2}>Ver detalle</Text>
+              </TouchableOpacity>
+            </View>
         ))
       ) : (
         <Text style={styles.noEventsText}>No hay eventos</Text>
       )}
-
+      <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
+        <Text style={styles.botonText}>+</Text>
+      </TouchableOpacity>
       {username === "administrador@ad.com.ar" && (
         <>
-          <Text> Eventos Pasados...</Text>
+              <View style={styles.separator}></View>
+          <Text style={styles.tittulo}> Eventos Pasados...</Text>
           {arrayEvents_pasados.length > 0 ? (
             arrayEvents_pasados.map((evento, index) => (
-              <View key={index} style={styles.card}>
-                <Text style={styles.eventText}>{evento.name}</Text>
+              <View key={index} style={styles.cardPasado}>
+                <Text style={styles.eventTextPasado}>{evento.name}</Text>
                 <Text style={styles.dateText}>{evento.start_date.substring(0, 10)}</Text>
               </View>
             ))
@@ -268,9 +270,7 @@ export default function Home({ route }) {
         </>
       )}
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-      <TouchableOpacity style={styles.boton} onPress={() => navigation.navigate('Formulario', { token, id_user })}>
-        <Text style={styles.botonText}>+</Text>
-      </TouchableOpacity>
+      
       <StatusBar style="auto" />
     </ScrollView>
 
@@ -407,7 +407,7 @@ export default function Home({ route }) {
             {persona_nombre.length > 0 ? (
               persona_nombre.map((persona, index) => (
                 <View key={index} style={styles.card}>
-                  <Text style={styles.eventText}>{persona.id}</Text>
+                  <Text style={styles.eventText}> ID: {persona.id}</Text>
                   <Text>{`${persona.first_name} ${persona.last_name}`}</Text>
                 </View>
               ))
@@ -425,6 +425,19 @@ export default function Home({ route }) {
 }
 
 const styles = StyleSheet.create({
+  separator : {
+    height: 1, 
+    width: '200%', 
+    backgroundColor: 'black', 
+    marginVertical: 10,
+    marginTop:100,
+  },
+  tittulo:{
+    fontWeight: 'bold',
+    fontSize: 25,
+    color: 'grey',
+    marginBottom: 15,
+  },
   container: {
     flexGrow: 1,
     backgroundColor: '#ffd9df',
@@ -458,10 +471,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cardPasado:{
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#e0e0e0', 
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    marginVertical: 10,
+    width: '45%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   eventText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#444',
+  },
+  eventTextPasado: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#999997', 
+    marginBottom: 15,
   },
   dateText: {
     fontSize: 14,
@@ -478,6 +511,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   boton: {
+    cursor: 'pointer',
     padding: 10,
     backgroundColor: '#7f6065',
     borderRadius: 5,
