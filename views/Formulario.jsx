@@ -210,7 +210,7 @@ export default function Formulario({ route }) {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Su evento se ha publicado correctamente yeey</Text>
-            <TouchableOpacity style={styles.button} onPress={() => setModalVisible2(false)}>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home', { token, id_user })}>
               <Text style={styles.buttonText}>Ok</Text>
             </TouchableOpacity>
           </View>
