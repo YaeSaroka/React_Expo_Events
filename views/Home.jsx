@@ -28,6 +28,7 @@ export default function Home({ route }) {
   const [price, setPrice] = useState(0);
   const [max_assistance, setMax_assistance] = useState(0);
   const [id_evento, setIdEvento] = useState(0);
+  const [nombreEvento, setEventoNombre] = useState('');
 
   const navigation = useNavigation();
   const { token, id_user, username } = route.params || {};
@@ -193,7 +194,7 @@ export default function Home({ route }) {
     } catch (error) {
       console.error("Error de conexión:", error.message || error);
     }
-  };
+  }
   const cargarNombreUsers = async (persona_id) => {
     try {
       const response = await axios.get(`http://10.144.1.38:3000/api/user/find`, {
@@ -403,6 +404,7 @@ export default function Home({ route }) {
             <Text style={styles.modalTitle}>Detalles de evento</Text>
             <Text style={styles.eventText}>{eventoActual.name}</Text>
             <Text style={styles.dateText}>{eventoActual.start_date}</Text>
+            <Text style={styles.eventText}> descrp: {eventoActual.description}</Text>
             <Text style={styles.modalTitle}>Listado de inscriptos</Text>
             {persona_nombre.length > 0 ? (
               persona_nombre.map((persona, index) => (
