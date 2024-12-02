@@ -42,7 +42,7 @@ export default function Home({ route }) {
 
   const selectEventsHome = async () => {
     try {
-      const response = await axios.get('http://10.144.1.38:3000/api/event/100/0');
+      const response = await axios.get('http://172.18.112.1:3000/api/event/100/0');
       const filteredEvents = response.data.collection.filter(evento => evento.start_date >= hoy);
       const filteredEvents_pasados = response.data.collection.filter(evento => evento.start_date < hoy);
       setArrayEvents(filteredEvents);
@@ -56,7 +56,7 @@ export default function Home({ route }) {
   const inscribirUser = async (evento) => {
     if (evento.enabled_for_enrollment) {
       try {
-        const response = await axios.post(`http://10.144.1.38:3000/api/event/${id_user}/enrollment`,
+        const response = await axios.post(`http://172.18.112.1:3000/api/event/${id_user}/enrollment`,
           {
             description: evento.description,
             attended: false,
@@ -104,7 +104,7 @@ export default function Home({ route }) {
 
   const editEvent = async () => {
     try {
-      const response = await axios.put('http://10.144.1.38:3000/api/event', {
+      const response = await axios.put('http://172.18.112.1:3000/api/event', {
         name,
         description,
         id_event_category,
@@ -135,7 +135,7 @@ export default function Home({ route }) {
     console.log(evento_id);
     try {
       console.log("hola -- ")
-      const response = await axios.delete(`http://10.144.1.38:3000/api/event/${evento_id}`, config);
+      const response = await axios.delete(`http://172.18.112.1:3000/api/event/${evento_id}`, config);
      //Error error: update o delete en «events» viola la llave foránea «fk_event_enrollments_events» en la tabla «event_enrollments»    --> aveces pasa y quiere decir que se eliminó
         if (response.data.success) {
             console.log("Evento eliminado correctamente");
@@ -168,7 +168,7 @@ export default function Home({ route }) {
     setEventoElegido(evento);
     
     try {
-      const response = await axios.get(`http://10.144.1.38:3000/api/event-enrollment/`, {
+      const response = await axios.get(`http://172.18.112.1:3000/api/event-enrollment/`, {
         params: { id: evento.id },
       });
 
@@ -198,7 +198,7 @@ export default function Home({ route }) {
     
   const cargarNombreUsers = async (persona_id) => {
     try {
-      const response = await axios.get(`http://10.144.1.38:3000/api/user/find`, {
+      const response = await axios.get(`http://172.18.112.1:3000/api/user/find`, {
         params: { id: persona_id }, 
       });
       if (response.data) {
@@ -408,7 +408,11 @@ export default function Home({ route }) {
             <Text style={styles.eventText}>{eventoActual.description}</Text>
             <Text style={styles.eventText}>{nombreEvento}</Text>
             <Text style={styles.eventText}>{nombreEvento}</Text>
-            <Text style={styles.modalTitle}>Listado de inscriptos</Text>
+          
+
+            {username === "administrador@ad.com.ar" && (
+              <>
+              <Text style={styles.modalTitle}>Listado de inscriptos</Text>
             {persona_nombre.length > 0 ? (
               persona_nombre.map((persona, index) => (
                 <View key={index} style={styles.card}>
@@ -419,6 +423,9 @@ export default function Home({ route }) {
             ) : (
               <Text>No hay personas inscriptas... todavía</Text>
             )}
+              </>
+            )}
+            
           </View>
           <TouchableOpacity style={styles.boton} onPress={closeModal}>
             <Text style={styles.botonText}>Cerrar</Text>
